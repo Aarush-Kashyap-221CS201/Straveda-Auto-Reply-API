@@ -16,6 +16,12 @@ const userSchema = new mongoose.Schema(
       required: true 
       // hashed password will be stored here
     },
+
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+    }
   },
   { timestamps: true }
 );

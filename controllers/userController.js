@@ -1,0 +1,254 @@
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const User = require("../models/User");
+
+/* ============================
+      CREATE NEW ADMIN
+============================ */
+const createNewAdmin = async (req, res) => {
+  try {
+    const { name, username, password } = req.body;
+
+    if (!name || !username || !password) {
+      return res.status(400).json({ error: "All fields are required" });
+    }
+
+    const normalizedUsername = username.trim().toLowerCase();
+
+    // Check duplicate username
+    const existing = await User.findOne({ username: normalizedUsername });
+    if (existing) {
+      return res.status(400).json({ error: "Username already taken" });
+    }
+
+    // Hash password
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    // Force admin role
+    const admin = await User.create({
+      name: name.trim(),
+      username: normalizedUsername,
+      password: passwordHash,
+      role: "admin",
+    });
+
+    // Issue token for the new admin
+    const token = jwt.sign(
+      { userId: admin._id, role: admin.role },
+      process.env.JWT_SECRET || "dev_secret",
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      token,
+      user: {
+        _id: admin._id,
+        name: admin.name,
+        username: admin.username,
+        role: admin.role,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+/* ============================
+        SIGNUP
+============================ */
+const signup = async (req, res) => {
+  try {
+    const { name, username, password } = req.body;
+
+    if (!name || !username || !password) {
+      return res.status(400).json({ error: "All fields are required" });
+    }
+
+    const normalizedUsername = username.trim().toLowerCase();
+
+    const existing = await User.findOne({ username: normalizedUsername });
+    if (existing) {
+      return res.status(400).json({ error: "Username already taken" });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const user = await User.create({
+      name: name.trim(),
+      username: normalizedUsername,
+      password: passwordHash,
+      role: "user", // ✅ default role
+    });
+
+    const token = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.JWT_SECRET || "dev_secret",
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      token,
+      user: {
+        _id: user._id,
+        name: user.name,
+        username: user.username,
+        role: user.role,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+/* ============================
+        LOGIN
+============================ */
+const login = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ error: "Username and password required" });
+    }
+
+    const user = await User.findOne({
+      username: username.trim().toLowerCase(),
+    });
+
+    if (!user) {
+      return res.status(400).json({ error: "User does not exist" });
+    }
+
+    const ok = await bcrypt.compare(password, user.password);
+    if (!ok) {
+      return res.status(400).json({ error: "Incorrect password" });
+    }
+
+    const token = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.JWT_SECRET || "dev_secret",
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      token,
+      user: {
+        _id: user._id,
+        name: user.name,
+        username: user.username,
+        role: user.role,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/* ============================
+        CREATE USER
+============================ */
+const createUser = async (req, res) => {
+  try {
+    const user = await User.create({
+      ...req.body,
+      role: req.body.role || "user",
+    });
+
+    res.json(user);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+
+/* ============================
+        GET ALL USERS
+============================ */
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find();
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/* ============================
+        GET USER BY ID
+============================ */
+const getUserById = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    res.json(user);
+  } catch (err) {
+    res.status(400).json({ error: "Invalid ID format" });
+  }
+};
+
+/* ============================
+        DELETE ALL USERS
+============================ */
+const deleteAllUsers = async (req, res) => {
+  try {
+    const result = await User.deleteMany({});
+    res.json({
+      message: "All users deleted successfully",
+      deletedCount: result.deletedCount,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/* ============================
+        DELETE USER BY ID
+============================ */
+const deleteUserById = async (req, res) => {
+  try {
+    const deleted = await User.findByIdAndDelete(req.params.id);
+
+    if (!deleted)
+      return res.status(404).json({ error: "User not found" });
+
+    res.json({ message: "User deleted", user: deleted });
+  } catch (err) {
+    res.status(400).json({ error: "Invalid ID format" });
+  }
+};
+
+/* ============================
+        UPDATE USER BY ID
+============================ */
+const updateUserById = async (req, res) => {
+  try {
+    const updated = await User.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    );
+
+    if (!updated)
+      return res.status(404).json({ error: "User not found" });
+
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+module.exports = {
+  createNewAdmin,
+  signup,
+  login,
+  createUser,
+  getAllUsers,
+  getUserById,
+  deleteAllUsers,
+  deleteUserById,
+  updateUserById,
+};

@@ -1,13 +1,13 @@
 const express = require("express");
 const {
-  createTemplate,
-  getAllTemplates,
-  getTemplatesByUser,
-  getTemplateById,
-  deleteAllTemplates,
-  deleteTemplateById,
-  updateTemplateById,
-} = require("../controllers/templateController");
+  createSchedule,
+  getAllSchedules,
+  getSchedulesByUser,
+  getScheduleById,
+  deleteAllSchedules,
+  deleteScheduleById,
+  updateScheduleById,
+} = require("../controllers/scheduleController");
 
 const userAuth = require("../middlewares/userAuth");
 const adminAuth = require("../middlewares/adminAuth");
@@ -17,27 +17,27 @@ const router = express.Router();
 /* ============================
         CREATE (ADMIN)
 ============================ */
-router.post("/", adminAuth, createTemplate);
+router.post("/", adminAuth, createSchedule);
 
 /* ============================
         READ
 ============================ */
-router.get("/", adminAuth, getAllTemplates);
+router.get("/", adminAuth, getAllSchedules);
 
 // ⚠️ must come BEFORE "/:id"
-router.get("/user/:userId", userAuth, getTemplatesByUser);
+router.get("/user/:userId", userAuth, getSchedulesByUser);
 
-router.get("/:id", adminAuth, getTemplateById);
+router.get("/:id", adminAuth, getScheduleById);
 
 /* ============================
         DELETE (ADMIN)
 ============================ */
-router.delete("/", adminAuth, deleteAllTemplates);
-router.delete("/:id", adminAuth, deleteTemplateById);
+router.delete("/", adminAuth, deleteAllSchedules);
+router.delete("/:id", adminAuth, deleteScheduleById);
 
 /* ============================
         UPDATE (ADMIN)
 ============================ */
-router.patch("/:id", adminAuth, updateTemplateById);
+router.patch("/:id", adminAuth, updateScheduleById);
 
 module.exports = router;
