@@ -15,9 +15,10 @@ const adminAuth = require("../middlewares/adminAuth");
 const router = express.Router();
 
 /* ============================
-        CREATE (ADMIN)
+        CREATE
+        (USER / ADMIN)
 ============================ */
-router.post("/", adminAuth, createTemplate);
+router.post("/", userAuth, createTemplate);
 
 /* ============================
         READ
@@ -27,17 +28,17 @@ router.get("/", adminAuth, getAllTemplates);
 // ⚠️ must come BEFORE "/:id"
 router.get("/user/:userId", userAuth, getTemplatesByUser);
 
-router.get("/:id", adminAuth, getTemplateById);
+router.get("/:id", userAuth, getTemplateById);
 
 /* ============================
-        DELETE (ADMIN)
+        DELETE
 ============================ */
 router.delete("/", adminAuth, deleteAllTemplates);
-router.delete("/:id", adminAuth, deleteTemplateById);
+router.delete("/:id", userAuth, deleteTemplateById);
 
 /* ============================
-        UPDATE (ADMIN)
+        UPDATE
 ============================ */
-router.patch("/:id", adminAuth, updateTemplateById);
+router.patch("/:id", userAuth, updateTemplateById);
 
 module.exports = router;

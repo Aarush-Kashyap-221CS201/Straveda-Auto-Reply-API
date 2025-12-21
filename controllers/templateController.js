@@ -1,10 +1,26 @@
+const Schedule = require("../models/Schedule");
 const Template = require("../models/Template");
 
 /* ============================
         CREATE TEMPLATE
+        (USER / ADMIN)
 ============================ */
 const createTemplate = async (req, res) => {
   try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: "userId is required" });
+    }
+
+    // 🔐 ownership check
+    if (
+      req.user.role !== "admin" &&
+      req.user.userId !== userId
+    ) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
     const template = await Template.create(req.body);
     res.json(template);
   } catch (err) {
@@ -12,8 +28,10 @@ const createTemplate = async (req, res) => {
   }
 };
 
+
 /* ============================
         GET ALL TEMPLATES
+        (ADMIN ONLY – unchanged)
 ============================ */
 const getAllTemplates = async (req, res) => {
   try {
@@ -31,21 +49,20 @@ const getTemplatesByUser = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    // 🔐 Ownership check
+    // 🔐 ownership check
     if (req.user.role !== "admin" && req.user.userId !== userId) {
       return res.status(403).json({ error: "Forbidden" });
     }
 
-    const templates = await Template.find({
-      userId,
-    }).sort({ createdAt: -1 });
+    const templates = await Template.find({ userId }).sort({
+      createdAt: -1,
+    });
 
     res.json(templates);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
-
 
 /* ============================
         GET TEMPLATE BY ID
@@ -57,6 +74,14 @@ const getTemplateById = async (req, res) => {
     if (!template)
       return res.status(404).json({ error: "Template not found" });
 
+    // 🔐 ownership check
+    if (
+      req.user.role !== "admin" &&
+      template.userId.toString() !== req.user.userId
+    ) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
     res.json(template);
   } catch (err) {
     res.status(400).json({ error: "Invalid ID format" });
@@ -65,6 +90,7 @@ const getTemplateById = async (req, res) => {
 
 /* ============================
         DELETE ALL TEMPLATES
+        (ADMIN ONLY)
 ============================ */
 const deleteAllTemplates = async (req, res) => {
   try {
@@ -83,32 +109,65 @@ const deleteAllTemplates = async (req, res) => {
 ============================ */
 const deleteTemplateById = async (req, res) => {
   try {
-    const deleted = await Template.findByIdAndDelete(req.params.id);
+    const template = await Template.findById(req.params.id);
 
-    if (!deleted)
+    if (!template) {
       return res.status(404).json({ error: "Template not found" });
+    }
 
-    res.json({ message: "Template deleted", template: deleted });
+    // 🔐 ownership check
+    if (
+      req.user.role !== "admin" &&
+      template.userId.toString() !== req.user.userId
+    ) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    // 🚫 check if template is used in any schedule
+    const usedInSchedule = await Schedule.exists({
+      templateId: template._id,
+    });
+
+    if (usedInSchedule) {
+      return res.status(400).json({
+        error: "Template is used in a schedule and cannot be deleted",
+      });
+    }
+
+    await template.deleteOne();
+
+    res.json({
+      message: "Template deleted",
+      template,
+    });
   } catch (err) {
     res.status(400).json({ error: "Invalid ID format" });
   }
 };
+
 
 /* ============================
         UPDATE TEMPLATE BY ID
 ============================ */
 const updateTemplateById = async (req, res) => {
   try {
-    const updated = await Template.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
+    const template = await Template.findById(req.params.id);
 
-    if (!updated)
+    if (!template)
       return res.status(404).json({ error: "Template not found" });
 
-    res.json(updated);
+    // 🔐 ownership check
+    if (
+      req.user.role !== "admin" &&
+      template.userId.toString() !== req.user.userId
+    ) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    Object.assign(template, req.body);
+    await template.save();
+
+    res.json(template);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

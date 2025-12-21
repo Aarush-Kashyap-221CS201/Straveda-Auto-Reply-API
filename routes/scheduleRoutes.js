@@ -15,9 +15,10 @@ const adminAuth = require("../middlewares/adminAuth");
 const router = express.Router();
 
 /* ============================
-        CREATE (ADMIN)
+        CREATE
+        (USER / ADMIN)
 ============================ */
-router.post("/", adminAuth, createSchedule);
+router.post("/", userAuth, createSchedule);
 
 /* ============================
         READ
@@ -27,17 +28,17 @@ router.get("/", adminAuth, getAllSchedules);
 // ⚠️ must come BEFORE "/:id"
 router.get("/user/:userId", userAuth, getSchedulesByUser);
 
-router.get("/:id", adminAuth, getScheduleById);
+router.get("/:id", userAuth, getScheduleById);
 
 /* ============================
-        DELETE (ADMIN)
+        DELETE
 ============================ */
 router.delete("/", adminAuth, deleteAllSchedules);
-router.delete("/:id", adminAuth, deleteScheduleById);
+router.delete("/:id", userAuth, deleteScheduleById);
 
 /* ============================
-        UPDATE (ADMIN)
+        UPDATE
 ============================ */
-router.patch("/:id", adminAuth, updateScheduleById);
+router.patch("/:id", userAuth, updateScheduleById);
 
 module.exports = router;
