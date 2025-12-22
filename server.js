@@ -2,7 +2,18 @@ const express = require("express");
 const mongoose = require("mongoose");
 require("dotenv").config();
 
+const cors = require("cors"); // ✅ ADD
+
 const app = express();
+
+/* ✅ ADD THIS BLOCK (must be before routes) */
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
+/* --------------------------------------- */
+
 app.use(express.json());
 
 const userRoutes = require("./routes/userRoutes");
