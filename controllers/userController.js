@@ -241,6 +241,62 @@ const updateUserById = async (req, res) => {
   }
 };
 
+const suspendUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user)
+      return res.status(404).json({ error: "User not found" });
+
+    // 🚫 Do not allow suspending admins
+    if (user.role === "admin") {
+      return res.status(403).json({
+        error: "Admin users cannot be suspended",
+      });
+    }
+
+    user.isSuspended = true;
+    await user.save();
+
+    res.json({
+      message: "User suspended successfully",
+      user,
+    });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+
+
+const activateUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user)
+      return res.status(404).json({ error: "User not found" });
+
+    // 🚫 Do not allow activating admins (meaningless operation)
+    if (user.role === "admin") {
+      return res.status(403).json({
+        error: "Admin users cannot be activated or deactivated",
+      });
+    }
+
+    user.isSuspended = false;
+    await user.save();
+
+    res.json({
+      message: "User activated successfully",
+      user,
+    });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+
+
 module.exports = {
   createNewAdmin,
   signup,
@@ -251,4 +307,6 @@ module.exports = {
   deleteAllUsers,
   deleteUserById,
   updateUserById,
+  suspendUser,
+  activateUser
 };

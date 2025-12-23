@@ -9,6 +9,8 @@ const {
   deleteAllUsers,
   deleteUserById,
   updateUserById,
+  suspendUser,
+  activateUser
 } = require("../controllers/userController");
 
 const adminAuth = require("../middlewares/adminAuth");
@@ -31,5 +33,7 @@ router.get("/:id", adminAuth, getUserById);
 router.delete("/", adminAuth, deleteAllUsers);
 router.delete("/:id", adminAuth, deleteUserById);
 router.patch("/:id", adminAuth, updateUserById);
+router.patch("/:id/suspend", adminAuth, suspendUser);
+router.patch("/:id/activate", adminAuth, activateUser);
 
 module.exports = router;
