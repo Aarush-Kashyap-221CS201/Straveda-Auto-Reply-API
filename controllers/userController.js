@@ -168,8 +168,62 @@ const createUser = async (req, res) => {
 ============================ */
 const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find();
-    res.json(users);
+    const {
+      page = 1,
+      limit = 10,
+      sortKey = "createdAt",
+      sortOrder = "desc",
+      search = "",
+      role,
+    } = req.query;
+
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
+
+    /* =========================
+       FILTER
+    ========================= */
+
+    const filter = {};
+
+    // role filter (user/admin)
+    if (role) {
+      filter.role = role;
+    }
+
+    // search by name or username
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { username: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    /* =========================
+       SORT
+    ========================= */
+
+    const sort = {
+      [sortKey]: sortOrder === "asc" ? 1 : -1,
+    };
+
+    /* =========================
+       QUERY
+    ========================= */
+
+    const query = User.find(filter).sort(sort);
+
+    if (limitNum > 0) {
+      query.skip((pageNum - 1) * limitNum).limit(limitNum);
+    }
+
+    const users = await query;
+    const total = await User.countDocuments(filter);
+
+    res.json({
+      users,
+      total,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
