@@ -10,10 +10,12 @@ const {
   deleteUserById,
   updateUserById,
   suspendUser,
-  activateUser
+  activateUser,
+  subscribeUser
 } = require("../controllers/userController");
 
 const adminAuth = require("../middlewares/adminAuth");
+const userAuth = require("../middlewares/userAuth");
 
 const router = express.Router();
 
@@ -33,6 +35,7 @@ router.get("/:id", adminAuth, getUserById);
 router.delete("/", adminAuth, deleteAllUsers);
 router.delete("/:id", adminAuth, deleteUserById);
 router.patch("/:id", adminAuth, updateUserById);
+router.patch("/:id/subscribe", userAuth, subscribeUser);
 router.patch("/:id/suspend", adminAuth, suspendUser);
 router.patch("/:id/activate", adminAuth, activateUser);
 

@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const Subscription = require("../models/Subscription");
 
 /* ============================
       CREATE NEW ADMIN
@@ -350,6 +351,77 @@ const activateUser = async (req, res) => {
 };
 
 
+/* ============================
+   SUBSCRIBE USER
+============================ */
+const subscribeUser = async (req, res) => {
+  try {
+    const { subscriptionId, subscriptionTerm } = req.body;
+
+    if (!subscriptionId || !subscriptionTerm) {
+      return res.status(400).json({
+        error: "subscriptionId and subscriptionTerm are required",
+      });
+    }
+
+    if (!["monthly", "yearly"].includes(subscriptionTerm)) {
+      return res.status(400).json({
+        error: "Invalid subscription term",
+      });
+    }
+
+    // ✅ Check subscription exists
+    const subscription = await Subscription.findById(subscriptionId);
+    if (!subscription) {
+      return res.status(404).json({
+        error: "Subscription not found",
+      });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user)
+      return res.status(404).json({ error: "User not found" });
+
+    // 🔐 ownership check
+    if (
+      req.user.role !== "admin" &&
+      user._id.toString() !== req.user.userId
+    ) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    /* ============================
+       CALCULATE VALID TILL
+    ============================ */
+    const now = new Date();
+    const validTill = new Date(now);
+
+    if (subscriptionTerm === "monthly") {
+      validTill.setMonth(validTill.getMonth() + 1);
+    } else {
+      validTill.setFullYear(validTill.getFullYear() + 1);
+    }
+
+    /* ============================
+       UPDATE USER
+    ============================ */
+    user.subscriptionId = subscriptionId;
+    user.subscriptionTerm = subscriptionTerm;
+    user.validTill = validTill;
+
+    await user.save();
+
+    res.json({
+      message: "Subscription updated successfully",
+      user,
+    });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+
+
 
 module.exports = {
   createNewAdmin,
@@ -362,5 +434,6 @@ module.exports = {
   deleteUserById,
   updateUserById,
   suspendUser,
-  activateUser
+  activateUser,
+  subscribeUser
 };
