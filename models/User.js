@@ -14,7 +14,6 @@ const userSchema = new mongoose.Schema(
     password: { 
       type: String, 
       required: true 
-      // hashed password will be stored here
     },
 
     role: {
@@ -34,6 +33,12 @@ const userSchema = new mongoose.Schema(
     subscriptionId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Subscription",
+      default: null,
+    },
+
+    subscriptionTerm: {
+      type: String,
+      enum: ["monthly", "yearly"],
       default: null,
     },
 
