@@ -27,6 +27,20 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    /* =========================
+       SUBSCRIPTION
+    ========================= */
+    subscriptionId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Subscription",
+      default: null,
+    },
+
+    validTill: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );
