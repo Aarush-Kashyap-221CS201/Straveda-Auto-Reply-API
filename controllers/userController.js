@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const Subscription = require("../models/Subscription");
+const Payment = require("../models/Payment");
 
 /* ============================
       CREATE NEW ADMIN
@@ -391,16 +392,34 @@ const subscribeUser = async (req, res) => {
     }
 
     /* ============================
-       CALCULATE VALID TILL
+       CALCULATE VALIDITY
     ============================ */
-    const now = new Date();
-    const validTill = new Date(now);
+    const validFrom = new Date();
+    const validTill = new Date(validFrom);
 
     if (subscriptionTerm === "monthly") {
       validTill.setMonth(validTill.getMonth() + 1);
     } else {
       validTill.setFullYear(validTill.getFullYear() + 1);
     }
+
+    /* ============================
+       CREATE PAYMENT
+    ============================ */
+    const amount =
+      subscriptionTerm === "monthly"
+        ? subscription.monthlyPrice
+        : subscription.yearlyPrice;
+
+    const payment = await Payment.create({
+      userId: user._id,
+      subscriptionId: subscription._id,
+      subscriptionName: subscription.name,
+      term: subscriptionTerm,
+      validFrom,
+      validTill,
+      amount,
+    });
 
     /* ============================
        UPDATE USER
@@ -414,6 +433,7 @@ const subscribeUser = async (req, res) => {
     res.json({
       message: "Subscription updated successfully",
       user,
+      payment,
     });
   } catch (err) {
     res.status(400).json({ error: err.message });
