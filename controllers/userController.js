@@ -240,6 +240,14 @@ const getUserById = async (req, res) => {
 
     if (!user) return res.status(404).json({ error: "User not found" });
 
+    // 🔐 ownership check
+    if (
+      req.user.role !== "admin" &&
+      user._id.toString() !== req.user.userId
+    ) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
     res.json(user);
   } catch (err) {
     res.status(400).json({ error: "Invalid ID format" });

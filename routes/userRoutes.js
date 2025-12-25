@@ -31,7 +31,7 @@ router.post("/login", login);
 router.post("/new-admin", adminAuth, createNewAdmin);
 router.post("/", adminAuth, createUser);
 router.get("/", adminAuth, getAllUsers);
-router.get("/:id", adminAuth, getUserById);
+router.get("/:id", userAuth, getUserById);
 router.delete("/", adminAuth, deleteAllUsers);
 router.delete("/:id", adminAuth, deleteUserById);
 router.patch("/:id", adminAuth, updateUserById);
