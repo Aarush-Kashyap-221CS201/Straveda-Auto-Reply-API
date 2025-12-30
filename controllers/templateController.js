@@ -49,10 +49,12 @@ const getTemplatesByUser = async (req, res) => {
   try {
     const { userId } = req.params;
 
+    /*
     // 🔐 ownership check
     if (req.user.role !== "admin" && req.user.userId !== userId) {
       return res.status(403).json({ error: "Forbidden" });
     }
+    */
 
     const templates = await Template.find({ userId }).sort({
       createdAt: -1,

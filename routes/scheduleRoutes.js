@@ -26,7 +26,7 @@ router.post("/", userAuth, createSchedule);
 router.get("/", adminAuth, getAllSchedules);
 
 // ⚠️ must come BEFORE "/:id"
-router.get("/user/:userId", userAuth, getSchedulesByUser);
+router.get("/user/:userId" /*,userAuth*/, getSchedulesByUser);
 
 router.get("/:id", userAuth, getScheduleById);
 

@@ -47,6 +47,7 @@ const getSchedulesByUser = async (req, res) => {
   try {
     const { userId } = req.params;
 
+    /*
     // 🔐 ownership check
     if (
       req.user.role !== "admin" &&
@@ -54,6 +55,7 @@ const getSchedulesByUser = async (req, res) => {
     ) {
       return res.status(403).json({ error: "Forbidden" });
     }
+    */
 
     const schedules = await Schedule.find({ userId }).sort({
       startDate: 1,

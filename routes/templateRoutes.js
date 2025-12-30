@@ -26,7 +26,7 @@ router.post("/", userAuth, createTemplate);
 router.get("/", adminAuth, getAllTemplates);
 
 // ⚠️ must come BEFORE "/:id"
-router.get("/user/:userId", userAuth, getTemplatesByUser);
+router.get("/user/:userId" /*,userAuth*/, getTemplatesByUser);
 
 router.get("/:id", userAuth, getTemplateById);
 

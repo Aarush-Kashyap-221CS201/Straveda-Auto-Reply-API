@@ -63,6 +63,7 @@ const getTenantById = async (req, res) => {
     if (!tenant)
       return res.status(404).json({ error: "Tenant not found" });
 
+    /*
     // 🔐 ownership check
     if (
       req.user.role !== "admin" &&
@@ -70,6 +71,7 @@ const getTenantById = async (req, res) => {
     ) {
       return res.status(403).json({ error: "Forbidden" });
     }
+    */
 
     res.json(tenant); // adminId returned as ObjectId
   } catch (err) {
