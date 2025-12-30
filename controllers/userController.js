@@ -469,12 +469,11 @@ const addTenantToUser = async (req, res) => {
     if (!user)
       return res.status(404).json({ error: "User not found" });
 
-    // 🔐 ownership check (admin or same user)
-    if (
-      req.user.role !== "admin" &&
-      user._id.toString() !== req.user.userId
-    ) {
-      return res.status(403).json({ error: "Forbidden" });
+    // 🚫 already assigned
+    if (user.tenantId) {
+      return res.status(400).json({
+        error: "User already belongs to a tenant",
+      });
     }
 
     /* ============================
@@ -484,17 +483,38 @@ const addTenantToUser = async (req, res) => {
     if (!tenant)
       return res.status(404).json({ error: "Tenant not found" });
 
+    // 🔐 tenant ownership check
+    if (
+      req.user.role !== "admin" &&
+      tenant.adminId.toString() !== req.user.userId
+    ) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    // 🚫 staff limit check (important)
+    if (tenant.currentStaffCount >= tenant.maxStaffCount) {
+      return res.status(400).json({
+        error: "Tenant staff limit reached",
+      });
+    }
+
     /* ============================
        UPDATE USER
     ============================ */
     user.tenantId = tenantId;
     user.isTenantAdmin = Boolean(isTenantAdmin);
-
     await user.save();
+
+    /* ============================
+       UPDATE TENANT STAFF COUNT
+    ============================ */
+    tenant.currentStaffCount += 1;
+    await tenant.save();
 
     res.json({
       message: "Tenant added to user successfully",
       user,
+      tenant,
     });
   } catch (err) {
     res.status(400).json({ error: err.message });
