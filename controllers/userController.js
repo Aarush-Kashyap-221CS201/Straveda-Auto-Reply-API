@@ -454,18 +454,21 @@ const subscribeUser = async (req, res) => {
 ============================ */
 const addTenantToUser = async (req, res) => {
   try {
-    const { tenantId, isTenantAdmin = false } = req.body;
+    const { tenantId, username, isTenantAdmin = false } = req.body;
 
-    if (!tenantId) {
+    if (!tenantId || !username) {
       return res.status(400).json({
-        error: "tenantId is required",
+        error: "tenantId and username are required",
       });
     }
 
     /* ============================
-       CHECK USER
+       CHECK USER (BY USERNAME)
     ============================ */
-    const user = await User.findById(req.params.id);
+    const user = await User.findOne({
+      username: username.trim().toLowerCase(),
+    });
+
     if (!user)
       return res.status(404).json({ error: "User not found" });
 
@@ -491,7 +494,7 @@ const addTenantToUser = async (req, res) => {
       return res.status(403).json({ error: "Forbidden" });
     }
 
-    // 🚫 staff limit check (important)
+    // 🚫 staff limit check
     if (tenant.currentStaffCount >= tenant.maxStaffCount) {
       return res.status(400).json({
         error: "Tenant staff limit reached",

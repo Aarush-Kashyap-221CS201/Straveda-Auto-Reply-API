@@ -30,6 +30,7 @@ router.post("/login", login);
         ADMIN CRUD ROUTES
 ============================ */
 router.post("/new-admin", adminAuth, createNewAdmin);
+router.patch("/add-tenant", userAuth, addTenantToUser);
 router.post("/", adminAuth, createUser);
 router.get("/", adminAuth, getAllUsers);
 router.get("/:id", userAuth, getUserById);
@@ -37,7 +38,6 @@ router.delete("/", adminAuth, deleteAllUsers);
 router.delete("/:id", adminAuth, deleteUserById);
 router.patch("/:id", adminAuth, updateUserById);
 router.patch("/:id/subscribe", userAuth, subscribeUser);
-router.patch("/:id/add-tenant", userAuth, addTenantToUser);
 router.patch("/:id/suspend", adminAuth, suspendUser);
 router.patch("/:id/activate", adminAuth, activateUser);
 
