@@ -39,6 +39,6 @@ router.delete("/:id", userAuth, deleteScheduleById);
 /* ============================
         UPDATE
 ============================ */
-router.patch("/:id", userAuth, updateScheduleById);
+router.patch("/:id"/*, userAuth*/, updateScheduleById);
 
 module.exports = router;
