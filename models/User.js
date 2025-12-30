@@ -46,6 +46,21 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+
+    /* =========================
+      TENANT CONTEXT
+    ========================= */
+    isTenantAdmin: {
+      type: Boolean,
+      default: false,
+    },
+
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tenant",
+      default: null,
+    },
+
   },
   { timestamps: true }
 );

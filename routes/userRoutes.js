@@ -11,7 +11,8 @@ const {
   updateUserById,
   suspendUser,
   activateUser,
-  subscribeUser
+  subscribeUser,
+  addTenantToUser
 } = require("../controllers/userController");
 
 const adminAuth = require("../middlewares/adminAuth");
@@ -36,6 +37,7 @@ router.delete("/", adminAuth, deleteAllUsers);
 router.delete("/:id", adminAuth, deleteUserById);
 router.patch("/:id", adminAuth, updateUserById);
 router.patch("/:id/subscribe", userAuth, subscribeUser);
+router.patch("/:id/add-tenant", userAuth, addTenantToUser);
 router.patch("/:id/suspend", adminAuth, suspendUser);
 router.patch("/:id/activate", adminAuth, activateUser);
 

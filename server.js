@@ -31,6 +31,9 @@ app.use("/subscriptions", subscriptionRoutes);
 const paymentRoutes = require("./routes/paymentRoutes");
 app.use("/payments", paymentRoutes);
 
+const tenantRoutes = require("./routes/tenantRoutes");
+app.use("/tenants", tenantRoutes);
+
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Connected"))

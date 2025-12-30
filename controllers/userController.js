@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const Subscription = require("../models/Subscription");
 const Payment = require("../models/Payment");
+const Tenant = require("../models/Tenant");
 
 /* ============================
       CREATE NEW ADMIN
@@ -448,6 +449,58 @@ const subscribeUser = async (req, res) => {
   }
 };
 
+/* ============================
+   ADD TENANT TO USER
+============================ */
+const addTenantToUser = async (req, res) => {
+  try {
+    const { tenantId, isTenantAdmin = false } = req.body;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        error: "tenantId is required",
+      });
+    }
+
+    /* ============================
+       CHECK USER
+    ============================ */
+    const user = await User.findById(req.params.id);
+    if (!user)
+      return res.status(404).json({ error: "User not found" });
+
+    // 🔐 ownership check (admin or same user)
+    if (
+      req.user.role !== "admin" &&
+      user._id.toString() !== req.user.userId
+    ) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    /* ============================
+       CHECK TENANT
+    ============================ */
+    const tenant = await Tenant.findById(tenantId);
+    if (!tenant)
+      return res.status(404).json({ error: "Tenant not found" });
+
+    /* ============================
+       UPDATE USER
+    ============================ */
+    user.tenantId = tenantId;
+    user.isTenantAdmin = Boolean(isTenantAdmin);
+
+    await user.save();
+
+    res.json({
+      message: "Tenant added to user successfully",
+      user,
+    });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
 
 
 
@@ -463,5 +516,6 @@ module.exports = {
   updateUserById,
   suspendUser,
   activateUser,
-  subscribeUser
+  subscribeUser,
+  addTenantToUser
 };
