@@ -546,8 +546,27 @@ const addTenantToUser = async (req, res) => {
   }
 };
 
+/* ============================
+   GET STAFF BY TENANT
+============================ */
+const getStaffByTenant = async (req, res) => {
+  try {
+    const userId = req.user.userId;
 
+    // 1. Get current user's tenantId
+    const currentUser = await User.findById(userId);
+    if (!currentUser || !currentUser.tenantId) {
+      return res.status(403).json({ error: "Access denied: No tenant associated." });
+    }
 
+    // 2. Fetch all users belonging to this tenant
+    const staff = await User.find({ tenantId: currentUser.tenantId }).sort({ createdAt: -1 });
+
+    res.json(staff);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 
 module.exports = {
   createNewAdmin,
