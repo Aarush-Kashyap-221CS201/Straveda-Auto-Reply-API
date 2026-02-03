@@ -10,18 +10,23 @@ const Tenant = require("../models/Tenant");
 ============================ */
 const createNewAdmin = async (req, res) => {
   try {
-    const { name, username, password } = req.body;
+    const { name, username, email, password } = req.body;
 
-    if (!name || !username || !password) {
+    if (!name || !username || !email || !password) {
       return res.status(400).json({ error: "All fields are required" });
     }
 
     const normalizedUsername = username.trim().toLowerCase();
+    const normalizedEmail = email.trim().toLowerCase();
 
-    // Check duplicate username
-    const existing = await User.findOne({ username: normalizedUsername });
+    // Check duplicate username or email
+    const existing = await User.findOne({
+      $or: [{ username: normalizedUsername }, { email: normalizedEmail }]
+    });
     if (existing) {
-      return res.status(400).json({ error: "Username already taken" });
+      return res.status(400).json({
+        error: existing.username === normalizedUsername ? "Username taken" : "Email already registered"
+      });
     }
 
     // Hash password
@@ -31,6 +36,7 @@ const createNewAdmin = async (req, res) => {
     const admin = await User.create({
       name: name.trim(),
       username: normalizedUsername,
+      email: normalizedEmail,
       password: passwordHash,
       role: "super_admin",
     });
@@ -62,17 +68,22 @@ const createNewAdmin = async (req, res) => {
 ============================ */
 const signup = async (req, res) => {
   try {
-    const { name, username, password } = req.body;
+    const { name, username, email, password } = req.body;
 
-    if (!name || !username || !password) {
+    if (!name || !username || !email || !password) {
       return res.status(400).json({ error: "All fields are required" });
     }
 
     const normalizedUsername = username.trim().toLowerCase();
+    const normalizedEmail = email.trim().toLowerCase();
 
-    const existing = await User.findOne({ username: normalizedUsername });
+    const existing = await User.findOne({
+      $or: [{ username: normalizedUsername }, { email: normalizedEmail }]
+    });
     if (existing) {
-      return res.status(400).json({ error: "Username already taken" });
+      return res.status(400).json({
+        error: existing.username === normalizedUsername ? "Username taken" : "Email already registered"
+      });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -80,6 +91,7 @@ const signup = async (req, res) => {
     const user = await User.create({
       name: name.trim(),
       username: normalizedUsername,
+      email: normalizedEmail,
       password: passwordHash,
       role: "user", // ✅ default role
     });
@@ -96,6 +108,7 @@ const signup = async (req, res) => {
         _id: user._id,
         name: user.name,
         username: user.username,
+        email: user.email,
         role: user.role,
       },
     });
@@ -141,6 +154,7 @@ const login = async (req, res) => {
         _id: user._id,
         name: user.name,
         username: user.username,
+        email: user.email,
         role: user.role,
       },
     });
@@ -249,7 +263,7 @@ const getUserById = async (req, res) => {
 
     // 🔐 ownership check
     if (
-      req.user.role !== "admin" &&
+      req.user.role !== "super_admin" &&
       user._id.toString() !== req.user.userId
     ) {
       return res.status(403).json({ error: "Forbidden" });
@@ -332,7 +346,7 @@ const suspendUser = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
 
     // 🚫 Do not allow suspending admins
-    if (user.role === "admin") {
+    if (user.role === "super_admin") {
       return res.status(403).json({
         error: "Admin users cannot be suspended",
       });
@@ -360,7 +374,7 @@ const activateUser = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
 
     // 🚫 Do not allow activating admins (meaningless operation)
-    if (user.role === "admin") {
+    if (user.role === "super_admin") {
       return res.status(403).json({
         error: "Admin users cannot be activated or deactivated",
       });
@@ -412,7 +426,7 @@ const subscribeUser = async (req, res) => {
 
     // 🔐 ownership check
     if (
-      req.user.role !== "admin" &&
+      req.user.role !== "super_admin" &&
       user._id.toString() !== req.user.userId
     ) {
       return res.status(403).json({ error: "Forbidden" });
@@ -506,7 +520,7 @@ const addTenantToUser = async (req, res) => {
 
     // 🔐 tenant ownership check
     if (
-      req.user.role !== "admin" &&
+      req.user.role !== "super_admin" &&
       tenant.adminId.toString() !== req.user.userId
     ) {
       return res.status(403).json({ error: "Forbidden" });
