@@ -15,7 +15,7 @@ const adminAuth = (req, res, next) => {
       process.env.JWT_SECRET || "dev_secret"
     );
 
-    if (decoded.role !== "admin") {
+    if (decoded.role !== "super_admin") {
       return res.status(403).json({ error: "Admin access only" });
     }
 

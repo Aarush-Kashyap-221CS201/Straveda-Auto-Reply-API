@@ -1,18 +1,19 @@
 const express = require("express");
 const {
-  createNewAdmin,
-  signup,
-  login,
-  createUser,
-  getAllUsers,
-  getUserById,
-  deleteAllUsers,
-  deleteUserById,
-  updateUserById,
-  suspendUser,
-  activateUser,
-  subscribeUser,
-  addTenantToUser
+        createNewAdmin,
+        signup,
+        login,
+        createUser,
+        getAllUsers,
+        getUserById,
+        deleteAllUsers,
+        deleteUserById,
+        updateUserById,
+        suspendUser,
+        activateUser,
+        subscribeUser,
+        addTenantToUser,
+        getStaffByTenant // ✅ ADD IMPORT
 } = require("../controllers/userController");
 
 const adminAuth = require("../middlewares/adminAuth");
@@ -31,6 +32,7 @@ router.post("/login", login);
 ============================ */
 router.post("/new-admin", adminAuth, createNewAdmin);
 router.patch("/add-tenant", userAuth, addTenantToUser);
+router.get("/staff", userAuth, getStaffByTenant); // ✅ New Route
 router.post("/", adminAuth, createUser);
 router.get("/", adminAuth, getAllUsers);
 router.get("/:id", userAuth, getUserById);

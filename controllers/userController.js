@@ -27,12 +27,12 @@ const createNewAdmin = async (req, res) => {
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // Force admin role
+    // Force super_admin role
     const admin = await User.create({
       name: name.trim(),
       username: normalizedUsername,
       password: passwordHash,
-      role: "admin",
+      role: "super_admin",
     });
 
     // Issue token for the new admin
@@ -178,6 +178,7 @@ const getAllUsers = async (req, res) => {
       sortOrder = "desc",
       search = "",
       role,
+      tenantId,
     } = req.query;
 
     const pageNum = parseInt(page, 10);
@@ -192,6 +193,11 @@ const getAllUsers = async (req, res) => {
     // role filter (user/admin)
     if (role) {
       filter.role = role;
+    }
+
+    // tenantId filter
+    if (tenantId) {
+      filter.tenantId = tenantId;
     }
 
     // search by name or username
@@ -287,19 +293,31 @@ const deleteUserById = async (req, res) => {
 };
 
 /* ============================
-        UPDATE USER BY ID
+    UPDATE USER (Password Fix)
 ============================ */
 const updateUserById = async (req, res) => {
   try {
-    const updated = await User.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
 
-    if (!updated)
-      return res.status(404).json({ error: "User not found" });
+    // 🔐 Hash password if being updated
+    if (req.body.password) {
+      if (req.body.password.length < 6) {
+        return res
+          .status(400)
+          .json({ error: "Password must be at least 6 characters" });
+      }
+      user.password = await bcrypt.hash(req.body.password, 10);
+    }
 
+    // Update other fields
+    Object.keys(req.body).forEach((key) => {
+      if (key !== "password") {
+        user[key] = req.body[key];
+      }
+    });
+
+    const updated = await user.save();
     res.json(updated);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -506,6 +524,10 @@ const addTenantToUser = async (req, res) => {
     ============================ */
     user.tenantId = tenantId;
     user.isTenantAdmin = Boolean(isTenantAdmin);
+
+    // ✅ Set Role based on isTenantAdmin
+    user.role = isTenantAdmin ? "tenant_admin" : "tenant_staff";
+
     await user.save();
 
     /* ============================
@@ -540,5 +562,6 @@ module.exports = {
   suspendUser,
   activateUser,
   subscribeUser,
-  addTenantToUser
+  addTenantToUser,
+  getStaffByTenant
 };
