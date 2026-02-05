@@ -12,7 +12,7 @@ const adminAuth = (req, res, next) => {
   try {
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET || "dev_secret"
+      process.env.JWT_SECRET
     );
 
     if (decoded.role !== "super_admin") {

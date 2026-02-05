@@ -44,7 +44,7 @@ const createNewAdmin = async (req, res) => {
     // Issue token for the new admin
     const token = jwt.sign(
       { userId: admin._id, role: admin.role },
-      process.env.JWT_SECRET || "dev_secret",
+      process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
@@ -98,7 +98,7 @@ const signup = async (req, res) => {
 
     const token = jwt.sign(
       { userId: user._id, role: user.role },
-      process.env.JWT_SECRET || "dev_secret",
+      process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
@@ -144,7 +144,7 @@ const login = async (req, res) => {
 
     const token = jwt.sign(
       { userId: user._id, role: user.role },
-      process.env.JWT_SECRET || "dev_secret",
+      process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
@@ -193,6 +193,9 @@ const getAllUsers = async (req, res) => {
       search = "",
       role,
       tenantId,
+      subscriptionId,
+      subscriptionTerm,
+      status,
     } = req.query;
 
     const pageNum = parseInt(page, 10);
@@ -220,6 +223,34 @@ const getAllUsers = async (req, res) => {
         { name: { $regex: search, $options: "i" } },
         { username: { $regex: search, $options: "i" } },
       ];
+    }
+
+    // subscription plan filter
+    if (subscriptionId) {
+      filter.subscriptionId = subscriptionId;
+    }
+
+    // subscription term filter
+    if (subscriptionTerm) {
+      filter.subscriptionTerm = subscriptionTerm;
+    }
+
+    // status filter (active/expired/expiring)
+    if (status) {
+      const now = new Date();
+
+      if (status === "active") {
+        // Has subscription and not expired
+        filter.validTill = { $gt: now };
+      } else if (status === "expired") {
+        // Has subscription but expired
+        filter.validTill = { $lte: now };
+      } else if (status === "expiring") {
+        // Expires within 30 days
+        const thirtyDaysFromNow = new Date();
+        thirtyDaysFromNow.setDate(now.getDate() + 30);
+        filter.validTill = { $gt: now, $lte: thirtyDaysFromNow };
+      }
     }
 
     /* =========================

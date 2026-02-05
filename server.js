@@ -2,11 +2,24 @@ const express = require("express");
 const mongoose = require("mongoose");
 require("dotenv").config();
 
-const cors = require("cors"); // ✅ ADD
+const cors = require("cors");
+const helmet = require("helmet"); // ✅ ADD
+
+
+// Check for required environment variables
+const requiredEnv = ["MONGO_URI", "JWT_SECRET", "PORT"];
+const missingEnv = requiredEnv.filter((key) => !process.env[key]);
+
+if (missingEnv.length > 0) {
+  console.error(`❌ Missing required environment variables: ${missingEnv.join(", ")}`);
+  process.exit(1);
+}
 
 const app = express();
 
 /* ✅ ADD THIS BLOCK (must be before routes) */
+/* ✅ ADD THIS BLOCK (must be before routes) */
+app.use(helmet()); // ✅ Security Headers
 app.use(cors({
   origin: "*",
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
