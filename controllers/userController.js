@@ -627,5 +627,91 @@ module.exports = {
   activateUser,
   subscribeUser,
   addTenantToUser,
-  getStaffByTenant
+  getStaffByTenant,
+  forgotPassword,
+  resetPassword,
+};
+
+/* ============================
+   FORGOT PASSWORD - SEND OTP
+============================ */
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: "Email is required" });
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Save/Update OTP in DB
+    const Otp = require("../models/Otp");
+    await Otp.findOneAndUpdate(
+      { email: user.email },
+      { otp, createdAt: Date.now() },
+      { upsert: true, new: true }
+    );
+
+    // Send Email via Brevo
+    if (!process.env.BREVO_API_KEY || process.env.BREVO_API_KEY.includes("PLACEHOLDER")) {
+      console.warn("⚠️ BREVO_API_KEY missing. OTP logged: " + otp);
+      return res.json({ message: "OTP generated (Check server logs - Key missing)" });
+    }
+
+    const brevo = require("@getbrevo/brevo");
+    const apiInstance = new brevo.TransactionalEmailsApi();
+
+    // Configure Auth
+    const apiKey = apiInstance.authentications["apiKey"];
+    apiKey.apiKey = process.env.BREVO_API_KEY;
+
+    const sendSmtpEmail = new brevo.SendSmtpEmail();
+    sendSmtpEmail.subject = "Your Password Reset OTP";
+    sendSmtpEmail.htmlContent = `<html><body><h2>Your OTP is: <b>${otp}</b></h2><p>This code expires in 5 minutes.</p></body></html>`;
+    sendSmtpEmail.sender = { name: "AutoReply App", email: "noreply@autoreplyapp.com" }; // Change to verified sender
+    sendSmtpEmail.to = [{ email: user.email, name: user.name }];
+
+    await apiInstance.sendTransacEmail(sendSmtpEmail);
+
+    res.json({ message: "OTP sent to your email" });
+  } catch (err) {
+    console.error("Forgot Password Error:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/* ============================
+   RESET PASSWORD - VERIFY OTP
+============================ */
+const resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ error: "All fields are required" });
+    }
+
+    // Verify OTP
+    const Otp = require("../models/Otp");
+    const validOtp = await Otp.findOne({ email: email.toLowerCase(), otp });
+
+    if (!validOtp) {
+      return res.status(400).json({ error: "Invalid or expired OTP" });
+    }
+
+    // Update Password
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    // Delete used OTP
+    await Otp.deleteOne({ _id: validOtp._id });
+
+    res.json({ message: "Password reset successful. Please login." });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };

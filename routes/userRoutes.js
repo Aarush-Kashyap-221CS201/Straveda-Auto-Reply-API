@@ -13,7 +13,10 @@ const {
         activateUser,
         subscribeUser,
         addTenantToUser,
-        getStaffByTenant // ✅ ADD IMPORT
+        addTenantToUser,
+        getStaffByTenant,
+        forgotPassword,
+        resetPassword
 } = require("../controllers/userController");
 
 const adminAuth = require("../middlewares/adminAuth");
@@ -26,6 +29,8 @@ const router = express.Router();
 ============================ */
 router.post("/signup", signup);
 router.post("/login", login);
+router.post("/forgot-password", forgotPassword); // ✅ New
+router.post("/reset-password", resetPassword);   // ✅ New
 
 /* ============================
         ADMIN CRUD ROUTES
